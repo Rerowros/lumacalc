@@ -1,0 +1,490 @@
+import { ScrollView } from "std-widgets.slint";
+
+export struct ConversionRow {
+    label: string,
+    value: string,
+    tone: string,
+}
+
+export struct HistoryRow {
+    expression: string,
+    result: string,
+}
+
+component IconButton inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    callback clicked;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: hit.pressed ? #45464f : hit.has-hover ? #37383f : transparent;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+
+    Text {
+        text: root.icon;
+        color: #e9e9ee;
+        font-size: 16px;
+        font-weight: 500;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    hit := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component NavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> title;
+    in property <bool> selected: false;
+    callback clicked;
+    height: 44px;
+    border-radius: 7px;
+    background: root.selected ? #3b3b44 : hit.pressed ? #393a42 : hit.has-hover ? #303138 : transparent;
+    accessible-role: button;
+    accessible-label: root.title;
+    accessible-action-default => { root.clicked(); }
+
+    if root.selected: Rectangle {
+        x: 2px;
+        y: 11px;
+        width: 3px;
+        height: 22px;
+        border-radius: 2px;
+        background: #c58bdf;
+    }
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 12px;
+        spacing: 14px;
+        Text { text: root.icon; width: 22px; color: root.selected ? #f1d9fb : #c9c9d0; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
+        Text { text: root.title; color: #f2f2f5; font-size: 14px; font-weight: root.selected ? 600 : 450; vertical-alignment: center; overflow: elide; }
+    }
+    hit := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component SectionLabel inherits Text {
+    height: 32px;
+    color: #a9a9b2;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.5px;
+    vertical-alignment: center;
+}
+
+component CalcKey inherits Rectangle {
+    in property <string> text;
+    in property <bool> operator: false;
+    in property <bool> primary: false;
+    callback clicked;
+    min-height: 50px;
+    border-radius: 8px;
+    background: hit.pressed
+        ? (root.primary ? #b16ed0 : #484950)
+        : hit.has-hover
+            ? (root.primary ? #cc91e7 : root.operator ? #414249 : #3b3c43)
+            : (root.primary ? #c684e3 : root.operator ? #383940 : #303138);
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-action-default => { root.clicked(); }
+    Text {
+        text: root.text;
+        color: root.primary ? #211524 : #f4f4f7;
+        font-size: root.primary ? 20px : 17px;
+        font-weight: root.primary ? 650 : 500;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    hit := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component QuickRow inherits Rectangle {
+    in property <string> icon;
+    in property <string> title;
+    in property <string> subtitle;
+    in property <bool> show-arrow: true;
+    callback clicked;
+    height: 52px;
+    border-radius: 7px;
+    background: hit.pressed ? #42434b : hit.has-hover ? #34353c : transparent;
+    accessible-role: button;
+    accessible-label: root.title + ". " + root.subtitle;
+    accessible-action-default => { root.clicked(); }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+        Rectangle {
+            width: 32px; height: 32px; border-radius: 7px; background: #3a3b43; border-width: 1px; border-color: #50515b;
+            Text { text: root.icon; color: #d9b6e8; font-size: 13px; font-weight: 650; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 1px;
+            Text { text: root.title; color: #f3f3f6; font-size: 14px; font-weight: 560; vertical-alignment: bottom; overflow: elide; }
+            Text { text: root.subtitle; color: #a7a7b0; font-size: 11px; vertical-alignment: top; overflow: elide; }
+        }
+        Text { visible: root.show-arrow; text: "›"; color: #777781; font-size: 18px; vertical-alignment: center; }
+    }
+    hit := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component ConversionLine inherits Rectangle {
+    in property <ConversionRow> data;
+    height: 44px;
+    border-radius: 7px;
+    background: hit.has-hover ? #33343b : transparent;
+    HorizontalLayout {
+        padding-left: 12px; padding-right: 12px; spacing: 12px;
+        Rectangle {
+            width: 32px; height: 28px; border-radius: 6px; background: root.data.tone == "accent" ? #4b3856 : #373840;
+            Text { text: root.data.label; color: root.data.tone == "accent" ? #edc8fd : #c9c9d1; font-size: 9px; font-weight: 650; horizontal-alignment: center; vertical-alignment: center; overflow: elide; }
+        }
+        Text { text: root.data.value + " " + root.data.label; color: #eeeeF2; font-size: 14px; font-weight: 550; vertical-alignment: center; overflow: elide; }
+    }
+    hit := TouchArea { mouse-cursor: default; }
+}
+
+component SettingToggle inherits Rectangle {
+    in property <bool> checked: false;
+    callback toggled(bool);
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: root.checked ? #c684e3 : #4b4c55;
+    Rectangle {
+        x: root.checked ? 22px : 2px;
+        y: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        background: root.checked ? #241927 : #d5d5da;
+    }
+    hit := TouchArea { mouse-cursor: pointer; clicked => { root.toggled(!root.checked); } }
+}
+
+component ExpressionEditor inherits Rectangle {
+    in-out property <string> expression;
+    in property <string> placeholder;
+    in property <bool> compact: false;
+    in property <bool> focus-request: false;
+    callback accepted(string);
+    callback escape;
+
+    Text {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        visible: root.expression == "";
+        text: root.placeholder;
+        color: #777781;
+        font-size: root.compact ? 17px : 15px;
+        horizontal-alignment: root.compact ? left : right;
+        vertical-alignment: center;
+    }
+    editor := TextInput {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        text <=> root.expression;
+        color: root.compact ? #f2f2f5 : #d8d8de;
+        selection-background-color: #b879d6;
+        selection-foreground-color: #17131a;
+        font-size: 18px;
+        horizontal-alignment: root.compact ? left : right;
+        vertical-alignment: center;
+        accessible-role: text-input;
+        accessible-label: "Выражение";
+        accepted => { root.accepted(root.expression); }
+        key-pressed(event) => { if (event.text == Key.Escape) { root.escape(); return accept; } return reject; }
+    }
+    changed focus-request => { editor.focus(); }
+}
+
+export component AppWindow inherits Window {
+    title: root.app-name;
+    width: root.overlay-mode ? 680px : 1040px;
+    height: root.overlay-mode ? (root.conversions.length > 0 ? 138px + root.conversions.length * 44px : (root.expression == "" ? 252px : 138px)) : 700px;
+    no-frame: true;
+    default-font-family: "Segoe UI Variable";
+    background: transparent;
+
+    in property <string> app-name: "LumaCalc";
+    in-out property <string> expression: "";
+    in property <string> result: "";
+    in property <string> result-caption: "";
+    in property <string> error-text: "";
+    in property <string> hotkey-status: "Win + Alt + Space";
+    in property <bool> has-error: false;
+    in property <bool> approximate: false;
+    in-out property <bool> overlay-mode: false;
+    in-out property <bool> navigation-open: true;
+    in-out property <string> workspace-mode: "standard";
+    in-out property <bool> startup-enabled: false;
+    in property <string> startup-message: "Выключено";
+    in property <[ConversionRow]> conversions;
+    in property <[HistoryRow]> history;
+    property <bool> converter-mode: root.workspace-mode == "length" || root.workspace-mode == "mass" || root.workspace-mode == "temperature" || root.workspace-mode == "speed" || root.workspace-mode == "data" || root.workspace-mode == "time" || root.workspace-mode == "area" || root.workspace-mode == "volume" || root.workspace-mode == "energy" || root.workspace-mode == "pressure" || root.workspace-mode == "angle";
+    property <string> mode-title: root.workspace-mode == "scientific" ? "Инженерный" : root.workspace-mode == "programmer" ? "Программист" : root.workspace-mode == "date" ? "Вычисление даты" : root.workspace-mode == "settings" ? "Параметры" : root.workspace-mode == "length" ? "Длина" : root.workspace-mode == "mass" ? "Масса" : root.workspace-mode == "temperature" ? "Температура" : root.workspace-mode == "speed" ? "Скорость" : root.workspace-mode == "data" ? "Данные" : root.workspace-mode == "time" ? "Время" : root.workspace-mode == "area" ? "Площадь" : root.workspace-mode == "volume" ? "Объём" : root.workspace-mode == "energy" ? "Энергия" : root.workspace-mode == "pressure" ? "Давление" : root.workspace-mode == "angle" ? "Угол" : "Обычный";
+    property <bool> focus-request: false;
+
+    callback evaluate(string);
+    callback use-example(string);
+    callback recall-history(string);
+    callback hide-requested();
+    callback quit-requested();
+    callback expand-requested();
+    callback compact-requested();
+    callback drag-requested();
+    callback set-startup-enabled(bool);
+
+    public function focus-expression() { root.focus-request = !root.focus-request; }
+
+    panel := Rectangle {
+        x: 6px; y: 6px; width: parent.width - 12px; height: parent.height - 12px;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #474851;
+        background: #1d1e22;
+        drop-shadow-blur: 16px;
+        drop-shadow-color: #00000088;
+        drop-shadow-offset-y: 5px;
+
+        VerticalLayout {
+            spacing: 0px;
+
+            Rectangle {
+                height: root.overlay-mode ? 56px : 38px;
+                background: #202125;
+                if root.overlay-mode: HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 10px;
+                    spacing: 8px;
+                    ExpressionEditor {
+                        horizontal-stretch: 1;
+                        expression <=> root.expression;
+                        placeholder: "Введите выражение или величину…";
+                        compact: true;
+                        focus-request: root.focus-request;
+                        accepted(value) => { root.evaluate(value); }
+                        escape => { root.hide-requested(); }
+                    }
+                    IconButton { icon: "↗"; label: "Полный режим"; clicked => { root.expand-requested(); } }
+                    IconButton { icon: "—"; label: "Скрыть"; clicked => { root.hide-requested(); } }
+                    IconButton { icon: "×"; label: "Завершить LumaCalc"; clicked => { root.quit-requested(); } }
+                }
+                if !root.overlay-mode: HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 8px;
+                    IconButton { icon: "≡"; label: "Навигация"; clicked => { root.navigation-open = !root.navigation-open; } }
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        TouchArea {
+                            mouse-cursor: move;
+                            pointer-event(event) => { if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) { root.drag-requested(); } }
+                        }
+                    }
+                    IconButton { icon: "—"; label: "Скрыть"; clicked => { root.hide-requested(); } }
+                    IconButton { icon: "×"; label: "Завершить LumaCalc"; clicked => { root.quit-requested(); } }
+                }
+            }
+
+            Rectangle { height: 1px; background: #33343a; }
+
+            if root.overlay-mode: VerticalLayout {
+                padding: 8px;
+                spacing: 2px;
+                if root.has-error: QuickRow { icon: "!"; title: "Не удалось вычислить"; subtitle: root.error-text; show-arrow: false; }
+                if !root.has-error: QuickRow { icon: "="; title: root.result; subtitle: (root.approximate ? "Приблизительно · " : "") + root.result-caption; show-arrow: false; }
+                for conversion in root.conversions: ConversionLine { data: conversion; }
+                if root.expression == "" && root.conversions.length == 0: QuickRow { icon: "↔"; title: "10 км в мили"; subtitle: "Конвертация единиц обычным текстом"; clicked => { root.use-example("10 км -> miles"); } }
+                if root.expression == "" && root.conversions.length == 0: QuickRow { icon: "ƒ"; title: "sqrt(144)"; subtitle: "Функции и выражения"; clicked => { root.use-example("sqrt(144)"); } }
+            }
+
+            if !root.overlay-mode: HorizontalLayout {
+                spacing: 0px;
+
+                if root.navigation-open: Rectangle {
+                    width: 252px;
+                    background: #242529;
+                    VerticalLayout {
+                        padding: 8px;
+                        spacing: 2px;
+                        ScrollView {
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                spacing: 2px;
+                                SectionLabel { text: "КАЛЬКУЛЯТОР"; }
+                                NavItem { icon: "▦"; title: "Обычный"; selected: root.workspace-mode == "standard"; clicked => { root.workspace-mode = "standard"; } }
+                                NavItem { icon: "∑"; title: "Инженерный"; selected: root.workspace-mode == "scientific"; clicked => { root.workspace-mode = "scientific"; } }
+                                NavItem { icon: "⌘"; title: "Программист"; selected: root.workspace-mode == "programmer"; clicked => { root.workspace-mode = "programmer"; } }
+                                NavItem { icon: "◫"; title: "Вычисление даты"; selected: root.workspace-mode == "date"; clicked => { root.workspace-mode = "date"; } }
+                                SectionLabel { text: "ПРЕОБРАЗОВАТЕЛЬ"; }
+                                NavItem { icon: "↔"; title: "Длина"; selected: root.workspace-mode == "length"; clicked => { root.workspace-mode = "length"; root.expression = "10 km -> miles"; root.evaluate(root.expression); } }
+                                NavItem { icon: "⚖"; title: "Масса"; selected: root.workspace-mode == "mass"; clicked => { root.workspace-mode = "mass"; root.expression = "5 kg -> lb"; root.evaluate(root.expression); } }
+                                NavItem { icon: "℃"; title: "Температура"; selected: root.workspace-mode == "temperature"; clicked => { root.workspace-mode = "temperature"; root.expression = "20 C -> F"; root.evaluate(root.expression); } }
+                                NavItem { icon: "➤"; title: "Скорость"; selected: root.workspace-mode == "speed"; clicked => { root.workspace-mode = "speed"; root.expression = "90 km/h -> mph"; root.evaluate(root.expression); } }
+                                NavItem { icon: "▤"; title: "Данные"; selected: root.workspace-mode == "data"; clicked => { root.workspace-mode = "data"; root.expression = "15 MB"; root.evaluate(root.expression); } }
+                                NavItem { icon: "◷"; title: "Время"; selected: root.workspace-mode == "time"; clicked => { root.workspace-mode = "time"; root.expression = "2 h -> min"; root.evaluate(root.expression); } }
+                                NavItem { icon: "□"; title: "Площадь"; selected: root.workspace-mode == "area"; clicked => { root.workspace-mode = "area"; root.expression = "100 m^2 -> ft^2"; root.evaluate(root.expression); } }
+                                NavItem { icon: "◇"; title: "Объём"; selected: root.workspace-mode == "volume"; clicked => { root.workspace-mode = "volume"; root.expression = "2 L -> gal"; root.evaluate(root.expression); } }
+                                NavItem { icon: "ϟ"; title: "Энергия"; selected: root.workspace-mode == "energy"; clicked => { root.workspace-mode = "energy"; root.expression = "1000 J -> kcal"; root.evaluate(root.expression); } }
+                                NavItem { icon: "◉"; title: "Давление"; selected: root.workspace-mode == "pressure"; clicked => { root.workspace-mode = "pressure"; root.expression = "1 bar -> psi"; root.evaluate(root.expression); } }
+                                NavItem { icon: "∠"; title: "Угол"; selected: root.workspace-mode == "angle"; clicked => { root.workspace-mode = "angle"; root.expression = "180 deg -> rad"; root.evaluate(root.expression); } }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #38393f; }
+                        NavItem { icon: "⚡"; title: "Быстрый режим"; clicked => { root.compact-requested(); } }
+                        NavItem { icon: "⚙"; title: "Параметры"; selected: root.workspace-mode == "settings"; clicked => { root.workspace-mode = "settings"; } }
+                    }
+                }
+
+                if root.navigation-open: Rectangle { width: 1px; background: #36373d; }
+
+                Rectangle {
+                    horizontal-stretch: 1;
+                    background: #1d1e22;
+                    VerticalLayout {
+                        spacing: 0px;
+
+                        Rectangle {
+                            height: root.workspace-mode == "settings" ? 58px : 138px;
+                            background: #202125;
+                            VerticalLayout {
+                                padding-left: 20px; padding-right: 20px; padding-top: 8px; padding-bottom: 8px; spacing: 2px;
+                                Text { text: root.mode-title; color: #f1f1f4; font-size: 15px; font-weight: 620; }
+                                if root.workspace-mode != "settings": ExpressionEditor {
+                                    height: 44px;
+                                    expression <=> root.expression;
+                                    placeholder: root.converter-mode ? "Введите значение или измените выражение" : "Введите выражение";
+                                    focus-request: root.focus-request;
+                                    accepted(value) => { root.evaluate(value); }
+                                    escape => { root.hide-requested(); }
+                                }
+                                if root.workspace-mode != "settings": Text { text: root.has-error ? "Ошибка" : root.result; color: root.has-error ? #ff9c9c : #f7f7fa; font-size: 38px; font-weight: 540; horizontal-alignment: right; overflow: elide; }
+                                if root.has-error && root.workspace-mode != "settings": Text { text: root.error-text; color: #e58d8d; font-size: 12px; horizontal-alignment: right; overflow: elide; }
+                            }
+                        }
+
+                        Rectangle { height: 1px; background: #303137; }
+
+                        if root.workspace-mode == "settings": VerticalLayout {
+                            padding: 24px;
+                            spacing: 16px;
+                            Text { text: "Быстрый запуск"; color: #f2f2f5; font-size: 20px; font-weight: 650; }
+                            Rectangle {
+                                height: 82px; border-radius: 10px; background: #292a30;
+                                HorizontalLayout {
+                                    padding-left: 18px; padding-right: 18px; spacing: 16px;
+                                    VerticalLayout {
+                                        spacing: 3px;
+                                        Text { text: "Запускать при входе в Windows"; color: #f0f0f3; font-size: 15px; font-weight: 580; }
+                                        Text { text: "LumaCalc останется скрытым и будет ждать Win + Alt + Space"; color: #9d9da6; font-size: 12px; }
+                                    }
+                                    SettingToggle { checked: root.startup-enabled; toggled(value) => { root.set-startup-enabled(value); } }
+                                }
+                            }
+                            Text { text: root.startup-message; color: root.startup-enabled ? #cfa4e2 : #9696a0; font-size: 12px; }
+                            Rectangle {
+                                height: 90px; border-radius: 10px; background: #292a30;
+                                VerticalLayout {
+                                    padding: 16px; spacing: 5px;
+                                    Text { text: "Приватность и ресурсы"; color: #f0f0f3; font-size: 15px; font-weight: 580; }
+                                    Text { text: "Без сети, телеметрии, службы и фонового таймера. Скрытый режим блокируется на системных событиях."; color: #9d9da6; font-size: 12px; wrap: word-wrap; }
+                                }
+                            }
+                            Rectangle { vertical-stretch: 1; }
+                            QuickRow { icon: "×"; title: "Завершить LumaCalc"; subtitle: "Остановить процесс и освободить глобальную горячую клавишу"; clicked => { root.quit-requested(); } }
+                        }
+
+                        if root.converter-mode: HorizontalLayout {
+                            padding: 18px; spacing: 14px;
+                            Rectangle {
+                                horizontal-stretch: 1; border-radius: 10px; background: #292a30;
+                                VerticalLayout {
+                                    padding: 18px; spacing: 12px;
+                                    Text { text: "ИЗ"; color: #9696a0; font-size: 11px; font-weight: 650; }
+                                    Text { text: root.workspace-mode == "length" ? "Километры" : root.workspace-mode == "mass" ? "Килограммы" : root.workspace-mode == "temperature" ? "Цельсий" : root.workspace-mode == "speed" ? "Километры в час" : root.workspace-mode == "data" ? "Мегабайты" : "Исходная единица"; color: #f0f0f4; font-size: 17px; }
+                                    Text { text: root.expression; color: #c58bdf; font-size: 24px; font-weight: 620; overflow: elide; }
+                                    Rectangle { vertical-stretch: 1; }
+                                    QuickRow {
+                                        icon: "↔";
+                                        title: "Поменять местами";
+                                        subtitle: "Источник и результат";
+                                        clicked => {
+                                            root.expression = root.workspace-mode == "length" ? "6.2137119224 miles -> km" : root.workspace-mode == "mass" ? "11.0231 lb -> kg" : root.workspace-mode == "temperature" ? "68 F -> C" : root.workspace-mode == "speed" ? "55.9234 mph -> km/h" : root.workspace-mode == "data" ? "120 Mbit -> MB" : root.workspace-mode == "time" ? "120 min -> h" : root.workspace-mode == "angle" ? "3.141592653589793 rad -> deg" : "1 -> 1";
+                                            root.evaluate(root.expression);
+                                        }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                horizontal-stretch: 1; border-radius: 10px; background: #292a30;
+                                VerticalLayout {
+                                    padding: 18px; spacing: 12px;
+                                    Text { text: "В"; color: #9696a0; font-size: 11px; font-weight: 650; }
+                                    Text { text: "Результат"; color: #f0f0f4; font-size: 17px; }
+                                    Text { text: root.result; color: #f5f5f8; font-size: 28px; font-weight: 620; overflow: elide; }
+                                    for conversion in root.conversions: ConversionLine { data: conversion; }
+                                    Rectangle { vertical-stretch: 1; }
+                                }
+                            }
+                        }
+
+                        if !root.converter-mode && root.workspace-mode != "settings": HorizontalLayout {
+                            spacing: 0px;
+                            VerticalLayout {
+                                horizontal-stretch: 1; padding: 12px; spacing: 8px;
+                                if root.workspace-mode == "scientific": HorizontalLayout {
+                                    spacing: 8px;
+                                    CalcKey { text: "sin"; clicked => { root.expression += "sin("; root.focus-expression(); } }
+                                    CalcKey { text: "cos"; clicked => { root.expression += "cos("; root.focus-expression(); } }
+                                    CalcKey { text: "tan"; clicked => { root.expression += "tan("; root.focus-expression(); } }
+                                    CalcKey { text: "log"; clicked => { root.expression += "log("; root.focus-expression(); } }
+                                    CalcKey { text: "π"; clicked => { root.expression += "pi"; root.focus-expression(); } }
+                                }
+                                if root.workspace-mode == "programmer": HorizontalLayout {
+                                    spacing: 8px;
+                                    CalcKey { text: "HEX"; operator: true; }
+                                    CalcKey { text: "DEC"; primary: true; }
+                                    CalcKey { text: "OCT"; operator: true; }
+                                    CalcKey { text: "BIN"; operator: true; }
+                                }
+                                GridLayout {
+                                    vertical-stretch: 1; spacing: 8px;
+                                    Row { CalcKey { text: "%"; operator: true; clicked => { root.expression += "%"; } } CalcKey { text: "CE"; operator: true; clicked => { root.expression = ""; } } CalcKey { text: "C"; operator: true; clicked => { root.expression = ""; } } CalcKey { text: "←"; operator: true; } }
+                                    Row { CalcKey { text: "1/x"; operator: true; } CalcKey { text: "x²"; operator: true; clicked => { root.expression += "^2"; } } CalcKey { text: "√x"; operator: true; clicked => { root.expression = "sqrt(" + root.expression + ")"; } } CalcKey { text: "÷"; operator: true; clicked => { root.expression += " / "; } } }
+                                    Row { CalcKey { text: "7"; clicked => { root.expression += "7"; } } CalcKey { text: "8"; clicked => { root.expression += "8"; } } CalcKey { text: "9"; clicked => { root.expression += "9"; } } CalcKey { text: "×"; operator: true; clicked => { root.expression += " * "; } } }
+                                    Row { CalcKey { text: "4"; clicked => { root.expression += "4"; } } CalcKey { text: "5"; clicked => { root.expression += "5"; } } CalcKey { text: "6"; clicked => { root.expression += "6"; } } CalcKey { text: "−"; operator: true; clicked => { root.expression += " - "; } } }
+                                    Row { CalcKey { text: "1"; clicked => { root.expression += "1"; } } CalcKey { text: "2"; clicked => { root.expression += "2"; } } CalcKey { text: "3"; clicked => { root.expression += "3"; } } CalcKey { text: "+"; operator: true; clicked => { root.expression += " + "; } } }
+                                    Row { CalcKey { text: "±"; } CalcKey { text: "0"; clicked => { root.expression += "0"; } } CalcKey { text: ","; clicked => { root.expression += ","; } } CalcKey { text: "="; primary: true; clicked => { root.evaluate(root.expression); } } }
+                                }
+                            }
+                            Rectangle { width: 1px; background: #303137; }
+                            Rectangle {
+                                width: 230px; background: #202125;
+                                VerticalLayout {
+                                    padding: 10px; spacing: 2px;
+                                    SectionLabel { text: "ИСТОРИЯ  ·  " + root.history.length; }
+                                    ScrollView {
+                                        vertical-stretch: 1;
+                                        VerticalLayout {
+                                            spacing: 2px;
+                                            for item in root.history: QuickRow { icon: "↺"; title: item.result; subtitle: item.expression; clicked => { root.recall-history(item.expression); } }
+                                        }
+                                    }
+                                    if root.history.length == 0: Text { text: "Здесь появятся вычисления"; color: #777781; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}

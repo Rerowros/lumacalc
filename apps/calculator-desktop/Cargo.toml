@@ -1,0 +1,19 @@
+[package]
+name = "calculator-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+
+[dependencies]
+calc-engine = { path = "../../crates/calc-engine" }
+calc-platform-windows = { path = "../../crates/calc-platform-windows" }
+slint.workspace = true
+
+[build-dependencies]
+slint-build = "~1.17"
+
+[lints]
+workspace = true
+

@@ -1,0 +1,26 @@
+schema: spec-driven
+
+context: |
+  Product: offline-first native desktop calculator for Windows 10/11.
+  Primary stack: stable Rust with Slint 1.17.x, winit backend, benchmark-selected renderer.
+  Architecture: headless calculation domain crates; UI is a thin presentation layer.
+  Priorities: low idle resource use, instant keyboard-first UX, accessibility, deterministic math, local privacy.
+  No web runtime, browser engine, background service, telemetry, or network dependency in the base product.
+  Specs and tests use stable requirement/error identifiers and Given/When/Then scenarios.
+  Implementation is AI-assisted: tasks must be small, independently verifiable, and guarded by automated tests.
+
+rules:
+  proposal:
+    - Separate MVP scope from post-MVP scope and explicit non-goals.
+    - Name every new capability that needs a contract.
+  specs:
+    - Use SHALL or MUST for normative behavior and at least one scenario per requirement.
+    - Include edge cases, failure behavior, and observable acceptance criteria.
+    - Do not prescribe implementation details unless they are externally observable constraints.
+  design:
+    - Record alternatives, trade-offs, measurable budgets, migration triggers, and unresolved questions.
+    - Keep domain logic independent from the GUI toolkit.
+  tasks:
+    - Keep each task bounded to one concern and pair implementation with verification.
+    - Reference requirement IDs and specify the exact quality gate that proves completion.
+    - Do not combine implementation, packaging, and release into a single task.

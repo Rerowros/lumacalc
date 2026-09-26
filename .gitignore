@@ -1,0 +1,24 @@
+# Rust build output
+/target/
+*.pdb
+*.ilk
+dist/
+
+# Logs
+*.log
+
+# Local agent tooling (not part of the project)
+.codex/
+.agents/
+.claude/
+
+# IDE / editor
+.idea/
+.vscode/
+.vs/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

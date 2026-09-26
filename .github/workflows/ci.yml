@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: fmt + clippy + test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # rust-toolchain.toml pins the exact toolchain and components; rustup installs it here.
+      - name: Install toolchain
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace --locked
+
+  release:
+    name: Release exe
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release --locked -p calculator-desktop
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $name = "LumaCalc-${{ github.ref_name }}-x86_64-windows.exe"
+          Copy-Item target/release/calculator-desktop.exe $name
+          (Get-FileHash $name -Algorithm SHA256).Hash.ToLower() + "  $name" | Out-File -Encoding ascii "$name.sha256"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            LumaCalc-${{ github.ref_name }}-x86_64-windows.exe
+            LumaCalc-${{ github.ref_name }}-x86_64-windows.exe.sha256
+          generate_release_notes: true
